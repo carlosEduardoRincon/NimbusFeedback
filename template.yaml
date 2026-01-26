@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: NimbusFeedback
+
+Parameters:
+  StageName:
+    Type: String
+    Default: prod
+  TableName:
+    Type: String
+    Default: feedbacks
+  FunctionName:
+    Type: String
+    Default: nimbus-feedback
+
+Globals:
+  Function:
+    Runtime: java21
+    MemorySize: 512
+    Timeout: 15
+    Architectures:
+      - x86_64
+    Tracing: Active
+    Environment:
+      Variables:
+        DYNAMODB_TABLE: !Ref TableName
+
+Resources:
+  FeedbackApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "${FunctionName}-api"
+      StageName: !Ref StageName
+      EndpointConfiguration: REGIONAL
+
+  FeedbackTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  UrgenciaTopic:
+    Type: AWS::SNS::Topic
+    Condition: ShouldCreateSns
+    Properties:
+      TopicName: !Sub "${FunctionName}-urgencia"
+
+  FeedbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      CodeUri: target/function.zip
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler
+
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref FeedbackTable
+
+        - SNSPublishMessagePolicy:
+          TopicName: !GetAtt UrgenciaTopic.TopicName
+      Events:
+        AvaliacaoPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FeedbackApi
+            Path: /avaliacao
+            Method: POST
+
+Outputs:
+  ApiUrl:
+    Description: URL do API Gateway (stage)
+    Value: !Sub "https://${FeedbackApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/avaliacao"
+
+  DynamoTableName:
+    Description: Nome da tabela DynamoDB
+    Value: !Ref FeedbackTable
+
+  LambdaFunctionName:
+    Description: Nome da função Lambda
+    Value: !Ref FeedbackFunction
+
+  SnsTopicArn:
+    Condition: ShouldCreateSns
+    Description: ARN do tópico SNS (se habilitado)
+    Value: !Ref UrgenciaTopic
