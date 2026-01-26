@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build (Maven)
-        run: mvn -B -DskipTests clean package
+        run: mvn -B -DskipTests clean package -Paws
 
       - name: Set up Python
         uses: actions/setup-python@v5
