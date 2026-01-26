@@ -18,8 +18,16 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Build
-        run: mvn clean package
+      - name: Build (Maven)
+        run: mvn -B -DskipTests clean package
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AWS SAM CLI
+        run: pip install aws-sam-cli
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -28,7 +36,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: us-east-1
 
-      - name: Deploy with SAM
+      - name: SAM Build
+        run: sam build
+
+      - name: SAM Deploy
         run: |
-          pip install aws-sam-cli
-          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+          sam deploy \
+            --stack-name nimbus-feedback \
+            --region "us-east-1" \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+      
