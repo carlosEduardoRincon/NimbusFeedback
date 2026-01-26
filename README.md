@@ -38,9 +38,11 @@ Validações:
      -d '{"descricao":"Ótima aula","nota":9}'
 
 ## Empacotamento para Lambda
-Gera o pacote da função:
+Gere o pacote com:
 mvn clean package -DskipTests
-Artefato: target/function.zip
+
+O Quarkus produz automaticamente o artefato:
+target/function.zip
 
 Handler (na Lambda):
 io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler
