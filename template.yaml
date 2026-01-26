@@ -57,8 +57,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Ref FunctionName
-      CodeUri: target/function.zip
+      CodeUri: target/
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler
+      Runtime: java17
 
       Policies:
         - DynamoDBWritePolicy:
@@ -88,6 +89,5 @@ Outputs:
     Value: !Ref FeedbackFunction
 
   SnsTopicArn:
-    Condition: ShouldCreateSns
     Description: ARN do tópico SNS (se habilitado)
     Value: !Ref UrgenciaTopic
