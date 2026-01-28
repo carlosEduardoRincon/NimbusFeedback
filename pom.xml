@@ -57,7 +57,7 @@
 
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-amazon-lambda</artifactId>
+      <artifactId>quarkus-amazon-lambda-http</artifactId>
     </dependency>
 
     <dependency>
