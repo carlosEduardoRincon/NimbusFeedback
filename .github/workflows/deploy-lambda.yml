@@ -39,10 +39,10 @@ jobs:
       - name: SAM Deploy
         run: |
           sam deploy \
-            --template-file packaged.yaml \
+            --template-file template.yaml \
             --stack-name nimbus-feedback \
             --region us-east-1 \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
-            --no-fail-on-empty-changeset \ 
+            --no-fail-on-empty-changeset \
             --resolve-s3
