@@ -56,7 +56,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Ref FunctionName
-      CodeUri: .
+      CodeUri: target/
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusHttpHandler::handleRequest
       Runtime: java17
 

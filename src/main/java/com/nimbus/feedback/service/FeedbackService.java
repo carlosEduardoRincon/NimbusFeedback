@@ -1,7 +1,9 @@
 package com.nimbus.feedback.service;
 
 import com.nimbus.feedback.model.Feedback;
+import jakarta.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class FeedbackService {
     private final DynamoService dynamo = new DynamoService();
     private final SnsService sns = new SnsService();
