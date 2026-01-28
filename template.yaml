@@ -49,7 +49,6 @@ Resources:
 
   UrgenciaTopic:
     Type: AWS::SNS::Topic
-    Condition: ShouldCreateSns
     Properties:
       TopicName: !Sub "${FunctionName}-urgencia"
 
@@ -66,7 +65,7 @@ Resources:
             TableName: !Ref FeedbackTable
 
         - SNSPublishMessagePolicy:
-          TopicName: !GetAtt UrgenciaTopic.TopicName
+            TopicName: !GetAtt UrgenciaTopic.TopicName
       Events:
         AvaliacaoPost:
           Type: Api
@@ -89,5 +88,5 @@ Outputs:
     Value: !Ref FeedbackFunction
 
   SnsTopicArn:
-    Description: ARN do tópico SNS (se habilitado)
+    Description: ARN do tópico SNS
     Value: !Ref UrgenciaTopic
