@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build (Maven)
-        run: mvn -B -DskipTests clean package -Paws
+        run: mvn -B -DskipTests clean package
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,9 +36,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: us-east-1
 
-      - name: SAM Build
-        run: sam build
-
       - name: SAM Deploy
         run: |
           sam deploy \
@@ -47,5 +44,5 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
-            --resolve-s3
-      
+            --resolve-s3 \
+            --no-build
