@@ -27,7 +27,7 @@ Globals:
 
 Resources:
   FeedbackApi:
-    Type: AWS::Serverless::Api
+    Type: AWS::Serverless::HttpApi
     Properties:
       Name: !Sub "${FunctionName}-api"
       StageName: !Ref StageName
@@ -68,7 +68,7 @@ Resources:
             TopicName: !GetAtt UrgenciaTopic.TopicName
       Events:
         AvaliacaoPost:
-          Type: Api
+          Type: HttpApi
           Properties:
             RestApiId: !Ref FeedbackApi
             Path: /avaliacao
