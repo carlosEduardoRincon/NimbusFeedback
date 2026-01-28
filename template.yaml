@@ -31,7 +31,6 @@ Resources:
     Properties:
       Name: !Sub "${FunctionName}-api"
       StageName: !Ref StageName
-      EndpointConfiguration: REGIONAL
 
   FeedbackTable:
     Type: AWS::DynamoDB::Table
@@ -70,7 +69,7 @@ Resources:
         AvaliacaoPost:
           Type: HttpApi
           Properties:
-            RestApiId: !Ref FeedbackApi
+            ApiId: !Ref FeedbackApi
             Path: /avaliacao
             Method: POST
 
