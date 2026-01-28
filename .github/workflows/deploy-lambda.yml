@@ -36,13 +36,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: us-east-1
 
-      - name: SAM Package
-        run: |
-          sam package \
-            --template-file template.yaml \
-            --s3-bucket ${{ secrets.SAM_BUCKET }} \
-            --output-template-file packaged.yaml
-
       - name: SAM Deploy
         run: |
           sam deploy \
