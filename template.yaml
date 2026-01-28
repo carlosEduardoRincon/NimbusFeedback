@@ -57,7 +57,7 @@ Resources:
     Properties:
       FunctionName: !Ref FunctionName
       CodeUri: target/function.zip
-      Handler: io.quarkus.amazon.lambda.runtime.QuarkusHttpHandler::handleRequest
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       Runtime: java17
 
       Policies:
