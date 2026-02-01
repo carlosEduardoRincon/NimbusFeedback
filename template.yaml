@@ -52,6 +52,15 @@ Resources:
     Properties:
       TopicName: !Sub "${FunctionName}-urgencia"
 
+  # Bucket para armazenar os relatórios CSV gerados pela função de report
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
   FeedbackFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -59,7 +68,6 @@ Resources:
       CodeUri: target/function.zip
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       Runtime: java17
-
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref FeedbackTable
@@ -73,6 +81,30 @@ Resources:
             Path: /avaliacao
             Method: POST
 
+  ReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${FunctionName}-report"
+      CodeUri: Report/target/repost-service-0.0.1-SNAPSHOT-runner.jar
+      Handler: com.nimbus.report.ReportHandler::handleRequest
+      Runtime: java17
+      Timeout: 60
+      Environment:
+        Variables:
+          REPORTS_BUCKET: !Ref ReportsBucket
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FeedbackTable
+        - S3WritePolicy:
+            BucketName: !Ref ReportsBucket
+      Events:
+        WeeklySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(7 days)
+            Name: !Sub "${FunctionName}-report-schedule"
+            Description: Geração semanal de relatórios
+
 Outputs:
   ApiUrl:
     Description: URL do API Gateway (stage)
@@ -85,6 +117,14 @@ Outputs:
   LambdaFunctionName:
     Description: Nome da função Lambda
     Value: !Ref FeedbackFunction
+
+  ReportLambdaFunctionName:
+    Description: Nome da função Lambda de relatórios
+    Value: !Ref ReportFunction
+
+  ReportsBucketName:
+    Description: Nome do bucket S3 para relatórios
+    Value: !Ref ReportsBucket
 
   SnsTopicArn:
     Description: ARN do tópico SNS
