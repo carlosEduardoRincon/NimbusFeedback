@@ -64,7 +64,7 @@ Resources:
         - DynamoDBWritePolicy:
             TableName: !Ref FeedbackTable
         - SNSPublishMessagePolicy:
-            TopicName: !Ref UrgenciaTopic
+            TopicName: !Sub "${FunctionName}-urgencia"
       Events:
         AvaliacaoPost:
           Type: HttpApi
