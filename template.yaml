@@ -52,7 +52,6 @@ Resources:
     Properties:
       TopicName: !Sub "${FunctionName}-urgencia"
 
-  # Bucket para armazenar os relatórios CSV gerados pela função de report
   ReportsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -65,7 +64,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Ref FunctionName
-      CodeUri: target/function.zip
+      CodeUri: Feedback/target/function.zip
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       Runtime: java17
       Policies:
