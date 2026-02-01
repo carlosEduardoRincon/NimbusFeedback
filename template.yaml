@@ -12,6 +12,9 @@ Parameters:
   FunctionName:
     Type: String
     Default: nimbus-feedback
+  UrgenciaTopic:
+    Type: String
+    Default: urgency-feedback
 
 Globals:
   Function:
@@ -24,6 +27,7 @@ Globals:
     Environment:
       Variables:
         DYNAMODB_TABLE: !Ref TableName
+        SNS_TOPIC: !Ref UrgenciaTopic
 
 Resources:
   FeedbackApi:
@@ -62,9 +66,8 @@ Resources:
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref FeedbackTable
-
         - SNSPublishMessagePolicy:
-            TopicName: !GetAtt UrgenciaTopic.TopicName
+            TopicName: !Ref UrgenciaTopic
       Events:
         AvaliacaoPost:
           Type: HttpApi
