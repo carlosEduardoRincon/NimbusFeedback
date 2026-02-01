@@ -12,9 +12,6 @@ Parameters:
   FunctionName:
     Type: String
     Default: nimbus-feedback
-  UrgenciaTopic:
-    Type: String
-    Default: urgency-feedback
 
 Globals:
   Function:
@@ -27,7 +24,7 @@ Globals:
     Environment:
       Variables:
         DYNAMODB_TABLE: !Ref TableName
-        SNS_TOPIC: !Ref UrgenciaTopic
+        SNS_TOPIC: !Ref UrgenciaSnsTopic
 
 Resources:
   FeedbackApi:
@@ -50,7 +47,7 @@ Resources:
       SSESpecification:
         SSEEnabled: true
 
-  UrgenciaTopic:
+  UrgenciaSnsTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub "${FunctionName}-urgencia"
@@ -67,7 +64,7 @@ Resources:
         - DynamoDBWritePolicy:
             TableName: !Ref FeedbackTable
         - SNSPublishMessagePolicy:
-            TopicName: !Ref UrgenciaTopic
+            TopicName: !Ref UrgenciaSnsTopic
       Events:
         AvaliacaoPost:
           Type: HttpApi
@@ -91,4 +88,4 @@ Outputs:
 
   SnsTopicArn:
     Description: ARN do tópico SNS
-    Value: !Ref UrgenciaTopic
+    Value: !Ref UrgenciaSnsTopic
