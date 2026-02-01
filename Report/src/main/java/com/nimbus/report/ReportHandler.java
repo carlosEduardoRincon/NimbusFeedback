@@ -46,7 +46,10 @@ public class ReportHandler implements RequestHandler<Map<String, Object>, String
 
     private String buildCsv(String table) {
         StringBuilder sb = new StringBuilder();
-        sb.append("id,descricao,nota,urgencia,dataEnvio\n");
+        sb.append("descricao,urgencia,dataEnvio\n");
+
+        java.util.Map<String, Integer> porDia = new java.util.HashMap<>();
+        java.util.Map<String, Integer> porUrgencia = new java.util.HashMap<>();
 
         Map<String, AttributeValue> lastKey = null;
         do {
@@ -56,43 +59,32 @@ public class ReportHandler implements RequestHandler<Map<String, Object>, String
             }
             ScanResponse resp = dynamo.scan(scanBuilder.build());
 
-            resp.items().forEach(item -> sb.append(formatLine(item)).append('\n'));
+            for (java.util.Map<String, AttributeValue> item : resp.items()) {
+                String descricao = item.containsKey("descricao") && item.get("descricao").s() != null ? item.get("descricao").s() : "";
+                String urgencia = item.containsKey("urgencia") && item.get("urgencia").s() != null ? item.get("urgencia").s() : "";
+                String dataEnvio = item.containsKey("dataEnvio") && item.get("dataEnvio").s() != null ? item.get("dataEnvio").s() : "";
+
+                sb.append(descricao).append(',').append(urgencia).append(',').append(dataEnvio).append('\n');
+
+                String dia = (dataEnvio != null && dataEnvio.length() >= 10) ? dataEnvio.substring(0, 10) : dataEnvio;
+                porDia.put(dia, porDia.getOrDefault(dia, 0) + 1);
+                porUrgencia.put(urgencia, porUrgencia.getOrDefault(urgencia, 0) + 1);
+            }
             lastKey = resp.lastEvaluatedKey();
         } while (lastKey != null && !lastKey.isEmpty());
 
+        sb.append('\n');
+        sb.append("quantidade_por_dia,dia,quantidade\n");
+        for (java.util.Map.Entry<String, Integer> e : porDia.entrySet()) {
+            sb.append("por-dia,").append(e.getKey()).append(',').append(e.getValue()).append('\n');
+        }
+        sb.append('\n');
+        sb.append("quantidade_por_urgencia,urgencia,quantidade\n");
+        for (java.util.Map.Entry<String, Integer> e : porUrgencia.entrySet()) {
+            sb.append("por-urgencia,").append(e.getKey()).append(',').append(e.getValue()).append('\n');
+        }
+
         return sb.toString();
-    }
-
-    private String formatLine(Map<String, AttributeValue> item) {
-        String id = getS(item, "id");
-        String desc = getS(item, "descricao");
-        String nota = getN(item, "nota");
-        String urg = getS(item, "urgencia");
-        String data = getS(item, "dataEnvio");
-
-        return String.join(",",
-                csvQuote(id),
-                csvQuote(desc),
-                csvQuote(nota),
-                csvQuote(urg),
-                csvQuote(data)
-        );
-    }
-
-    private static String getS(Map<String, AttributeValue> item, String key) {
-        AttributeValue v = item.get(key);
-        return v == null ? "" : v.s();
-    }
-
-    private static String getN(Map<String, AttributeValue> item, String key) {
-        AttributeValue v = item.get(key);
-        return v == null ? "" : v.n();
-    }
-
-    private static String csvQuote(String v) {
-        if (v == null) return "\"\"";
-        String escaped = v.replace("\"", "\"\"");
-        return "\"" + escaped + "\"";
     }
 
     private static String buildObjectKey() {
