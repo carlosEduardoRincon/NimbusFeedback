@@ -64,8 +64,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Ref FunctionName
-      CodeUri: Feedback/target/function.zip
-      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      CodeUri: Feedback/target/feedback-service-0.0.1-SNAPSHOT-runner.jar
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusHttpHandler::handleRequest
       Runtime: java17
       Policies:
         - DynamoDBWritePolicy:
