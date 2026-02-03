@@ -2,25 +2,21 @@ package com.nimbus.report;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import com.nimbus.report.service.DynamoReportService;
+import com.nimbus.report.service.S3ReportService;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
-import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class ReportHandler implements RequestHandler<Map<String, Object>, String> {
 
-    private final DynamoDbClient dynamo = DynamoDbClient.create();
-    private final S3Client s3 = S3Client.create();
+    private final DynamoReportService dynamoService = new DynamoReportService();
+    private final S3ReportService s3Service = new S3ReportService();
 
     @Override
     public String handleRequest(Map<String, Object> input, Context context) {
@@ -30,48 +26,33 @@ public class ReportHandler implements RequestHandler<Map<String, Object>, String
             throw new IllegalStateException("REPORTS_BUCKET não definido");
         }
 
-        String csv = buildCsv(table);
+        List<Map<String, AttributeValue>> items = dynamoService.fetchAll(table);
+        String csv = buildCsv(items);
         String key = buildObjectKey();
 
-        PutObjectRequest put = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .contentType("text/csv")
-                .build();
-
-        s3.putObject(put, RequestBody.fromBytes(csv.getBytes(StandardCharsets.UTF_8)));
+        s3Service.uploadCsv(bucket, key, csv);
 
         return String.format("Relatório gerado: s3://%s/%s (%d bytes)", bucket, key, csv.length());
     }
 
-    private String buildCsv(String table) {
+    private String buildCsv(List<Map<String, AttributeValue>> items) {
         StringBuilder sb = new StringBuilder();
         sb.append("descricao,urgencia,dataEnvio\n");
 
         java.util.Map<String, Integer> porDia = new java.util.HashMap<>();
         java.util.Map<String, Integer> porUrgencia = new java.util.HashMap<>();
 
-        Map<String, AttributeValue> lastKey = null;
-        do {
-            ScanRequest.Builder scanBuilder = ScanRequest.builder().tableName(table);
-            if (lastKey != null && !lastKey.isEmpty()) {
-                scanBuilder = scanBuilder.exclusiveStartKey(lastKey);
-            }
-            ScanResponse resp = dynamo.scan(scanBuilder.build());
+        for (Map<String, AttributeValue> item : items) {
+            String descricao = item.containsKey("descricao") && item.get("descricao").s() != null ? item.get("descricao").s() : "";
+            String urgencia = item.containsKey("urgencia") && item.get("urgencia").s() != null ? item.get("urgencia").s() : "";
+            String dataEnvio = item.containsKey("dataEnvio") && item.get("dataEnvio").s() != null ? item.get("dataEnvio").s() : "";
 
-            for (java.util.Map<String, AttributeValue> item : resp.items()) {
-                String descricao = item.containsKey("descricao") && item.get("descricao").s() != null ? item.get("descricao").s() : "";
-                String urgencia = item.containsKey("urgencia") && item.get("urgencia").s() != null ? item.get("urgencia").s() : "";
-                String dataEnvio = item.containsKey("dataEnvio") && item.get("dataEnvio").s() != null ? item.get("dataEnvio").s() : "";
+            sb.append(descricao).append(',').append(urgencia).append(',').append(dataEnvio).append('\n');
 
-                sb.append(descricao).append(',').append(urgencia).append(',').append(dataEnvio).append('\n');
-
-                String dia = (dataEnvio != null && dataEnvio.length() >= 10) ? dataEnvio.substring(0, 10) : dataEnvio;
-                porDia.put(dia, porDia.getOrDefault(dia, 0) + 1);
-                porUrgencia.put(urgencia, porUrgencia.getOrDefault(urgencia, 0) + 1);
-            }
-            lastKey = resp.lastEvaluatedKey();
-        } while (lastKey != null && !lastKey.isEmpty());
+            String dia = (dataEnvio != null && dataEnvio.length() >= 10) ? dataEnvio.substring(0, 10) : dataEnvio;
+            porDia.put(dia, porDia.getOrDefault(dia, 0) + 1);
+            porUrgencia.put(urgencia, porUrgencia.getOrDefault(urgencia, 0) + 1);
+        }
 
         sb.append('\n');
         sb.append("quantidade_por_dia,dia,quantidade\n");
