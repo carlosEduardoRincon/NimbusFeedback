@@ -7,22 +7,29 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbus.feedback.dto.FeedbackDTO;
 import com.nimbus.feedback.service.FeedbackService;
-import jakarta.inject.Inject;
 
 public class LambdaHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 
-    @Inject
-    FeedbackService service;
+    private final FeedbackService service;
+    private final ObjectMapper mapper;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    public LambdaHandler() {
+        this.service = new FeedbackService();
+        this.mapper = new ObjectMapper();
+    }
 
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
         try {
             String body = event.getBody();
+            context.getLogger().log("Received body: " + body);
+
             FeedbackDTO dto = mapper.readValue(body, FeedbackDTO.class);
+            context.getLogger().log("Parsed DTO: " + dto.getDescricao() + ", nota: " + dto.getNota());
 
             service.processarNovoFeedback(dto.getDescricao(), dto.getNota());
+
+            context.getLogger().log("Feedback processado com sucesso");
 
             return APIGatewayV2HTTPResponse.builder()
                     .withStatusCode(200)
@@ -32,12 +39,14 @@ public class LambdaHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIG
 
         } catch (Exception e) {
             context.getLogger().log("Erro ao processar feedback: " + e.getMessage());
+            e.printStackTrace();
 
             return APIGatewayV2HTTPResponse.builder()
                     .withStatusCode(500)
                     .withHeaders(java.util.Map.of("Content-Type", "application/json"))
-                    .withBody("{\"error\":\"Erro interno do servidor\"}")
+                    .withBody("{\"error\":\"Erro interno do servidor: " + e.getMessage() + "\"}")
                     .build();
         }
     }
 }
+
