@@ -1,0 +1,71 @@
+graph TB
+    subgraph "Cliente/Frontend"
+        CLIENT[Cliente/App]
+    end
+
+subgraph "AWS Cloud"
+subgraph "API Gateway"
+API[HTTP API<br/>nimbus-feedback-api]
+end
+
+subgraph "Lambda Functions"
+FEEDBACK_LAMBDA[FeedbackFunction<br/>POST /avaliacao<br/>Java 17]
+REPORT_LAMBDA[ReportFunction<br/>Relatórios Semanais<br/>Java 17]
+end
+
+subgraph "Storage"
+DYNAMODB[(DynamoDB<br/>feedbacks table<br/>Pay-per-request)]
+S3[(S3 Bucket<br/>Relatórios<br/>AES256 encrypted)]
+end
+
+subgraph "Messaging"
+SNS[SNS Topic<br/>Urgência<br/>nimbus-feedback-urgencia]
+end
+
+subgraph "Scheduler"
+EVENTBRIDGE[EventBridge<br/>Schedule: rate]
+end
+end
+
+subgraph "Código Java"
+subgraph "Feedback Service"
+HANDLER[LambdaHandler]
+DTO[DTOs]
+MODEL[Models]
+SERVICE[Services]
+end
+
+subgraph "Report Service"
+REPORT_HANDLER[ReportHandler]
+end
+end
+
+%% Fluxo de requisições
+CLIENT -->|POST Request| API
+API -->|Trigger| FEEDBACK_LAMBDA
+FEEDBACK_LAMBDA -->|Read/Write| DYNAMODB
+FEEDBACK_LAMBDA -->|Publish Message| SNS
+
+%% Fluxo de relatórios
+EVENTBRIDGE -->|Weekly Trigger| REPORT_LAMBDA
+REPORT_LAMBDA -->|Read Data| DYNAMODB
+REPORT_LAMBDA -->|Store Reports| S3
+
+%% Estrutura de código
+FEEDBACK_LAMBDA -.->|Uses| HANDLER
+HANDLER -.->|Uses| SERVICE
+SERVICE -.->|Uses| MODEL
+SERVICE -.->|Uses| DTO
+
+REPORT_LAMBDA -.->|Uses| REPORT_HANDLER
+
+%% Estilos
+classDef aws fill:#FF9900,stroke:#333,stroke-width:2px,color:#fff
+classDef java fill:#007396,stroke:#333,stroke-width:2px,color:#fff
+classDef storage fill:#3F48CC,stroke:#333,stroke-width:2px,color:#fff
+classDef client fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
+
+class API,FEEDBACK_LAMBDA,REPORT_LAMBDA,SNS,EVENTBRIDGE aws
+class HANDLER,DTO,MODEL,SERVICE,REPORT_HANDLER java
+class DYNAMODB,S3 storage
+class CLIENT client
