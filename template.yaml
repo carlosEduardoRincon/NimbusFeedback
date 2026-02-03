@@ -65,7 +65,7 @@ Resources:
     Properties:
       FunctionName: !Ref FunctionName
       CodeUri: Feedback/target/feedback-service-0.0.1-SNAPSHOT-runner.jar
-      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      Handler: com.nimbus.feedback.LambdaHandler::handleRequest
       Runtime: java17
       Policies:
         - DynamoDBWritePolicy:
