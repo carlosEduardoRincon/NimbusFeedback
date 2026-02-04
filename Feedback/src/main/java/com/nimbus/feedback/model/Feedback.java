@@ -21,7 +21,7 @@ public class Feedback {
     }
 
     private String calcularUrgencia(int nota) {
-        if (nota <= 3) return "URGENTE";
+        if (nota <= 4) return "URGENTE";
         if (nota <= 6) return "ATENCAO";
         return "NORMAL";
     }
